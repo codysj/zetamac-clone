@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="heatwave" data-font="speed">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arithmetic 🔥</title>
+<link rel="stylesheet" href="styles.css">
+<!-- ponytail: FOUC pre-paint — dup read only, full resolution happens in ui.js initAppearance() -->
+<script>try{var s=JSON.parse(localStorage.getItem('zc:v1'))||{};var p=s.prefs||{};
+document.documentElement.setAttribute('data-theme',p.themeId||'heatwave');
+document.documentElement.setAttribute('data-font',p.fontId||'speed');}catch(e){
+document.documentElement.setAttribute('data-theme','heatwave');
+document.documentElement.setAttribute('data-font','speed');}</script>
+</head>
+<body>
+  <!-- Global juice / brainrot overlays (fixed, pointer-events:none, below interaction) -->
+  <div id="flash" aria-hidden="true"></div>
+  <div id="fx" aria-hidden="true"></div>
+  <video id="bgVideo" muted loop playsinline aria-hidden="true"></video>
+  <div id="bgFallback" aria-hidden="true"></div>
+  <audio id="bgMusic" loop hidden></audio>
+  <aside id="brainrotPanel" hidden aria-hidden="true">
+    <video id="brainrotVideo" muted loop playsinline></video>
+  </aside>
+
+  <div class="header">
+    <div class="container">
+      <a href="#" id="home">Arithmetic 🔥</a>
+      <button id="mute" type="button" aria-pressed="false" aria-label="Toggle sound">🔊</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ===== Settings ===== -->
+    <div id="settings">
+      <h1>Arithmetic</h1>
+      <p class="lead">A fast-paced speed drill. Solve as many problems as you can
+      before the clock runs out — keep your streak alive and watch the heat rise.</p>
+
+      <table class="settings">
+        <tr>
+          <td class="op"><label><input type="checkbox" id="add_on" checked> Addition</label></td>
+          <td>
+            <input type="text" id="add_a1" value="2" aria-label="Addition first low"> to
+            <input type="text" id="add_a2" value="100" aria-label="Addition first high"> +
+            <input type="text" id="add_b1" value="2" aria-label="Addition second low"> to
+            <input type="text" id="add_b2" value="100" aria-label="Addition second high">
+          </td>
+        </tr>
+        <tr>
+          <td class="op"><label><input type="checkbox" id="sub_on" checked> Subtraction</label></td>
+          <td class="muted">Addition problems in reverse.</td>
+        </tr>
+        <tr>
+          <td class="op"><label><input type="checkbox" id="mul_on" checked> Multiplication</label></td>
+          <td>
+            <input type="text" id="mul_a1" value="2" aria-label="Multiplication first low"> to
+            <input type="text" id="mul_a2" value="12" aria-label="Multiplication first high"> ×
+            <input type="text" id="mul_b1" value="2" aria-label="Multiplication second low"> to
+            <input type="text" id="mul_b2" value="100" aria-label="Multiplication second high">
+          </td>
+        </tr>
+        <tr>
+          <td class="op"><label><input type="checkbox" id="div_on" checked> Division</label></td>
+          <td class="muted">Multiplication problems in reverse.</td>
+        </tr>
+      </table>
+
+      <div class="duration-row">
+        <label for="duration">Seconds:</label>
+        <select id="duration">
+          <option value="30">30</option>
+          <option value="60">60</option>
+          <option value="120" selected>120</option>
+          <option value="300">300</option>
+          <option value="600">600</option>
+        </select>
+      </div>
+
+      <div class="drill-row">
+        <label><input type="checkbox" id="drill_weak" aria-describedby="drill_hint"> Drill weak facts</label>
+        <span id="drill_hint" class="muted">Biases problems toward the facts you miss or answer slowly.</span>
+      </div>
+
+      <div class="appearance-row">
+        <label>Theme
+          <select id="theme-select" aria-label="Theme"></select>
+        </label>
+        <label>Font
+          <select id="font-select" aria-label="Font"></select>
+        </label>
+        <span id="theme-hint" class="muted" role="status" aria-live="polite"></span>
+      </div>
+
+      <fieldset class="brainrot-row">
+        <legend>Brainrot</legend>
+        <label><input type="checkbox" id="ambient_on" aria-label="Ambient background"> Ambient background</label>
+        <label><input type="checkbox" id="split_on" aria-label="Brainrot split-screen mode"> Split-screen</label>
+        <label><input type="checkbox" id="music_on" aria-label="Background music"> Music</label>
+        <div class="media-slot">
+          <label for="video_file">Video file</label>
+          <input type="file" id="video_file" accept="video/*">
+          <input type="url" id="video_url" placeholder="or paste video URL" aria-label="Video URL">
+        </div>
+        <div class="media-slot">
+          <label for="music_file">Music file</label>
+          <input type="file" id="music_file" accept="audio/*">
+          <input type="url" id="music_url" placeholder="or paste music URL" aria-label="Music URL">
+        </div>
+      </fieldset>
+
+      <div class="start-row">
+        <button class="btn" id="start" type="button">Start</button>
+        <button class="btn" id="dailybtn" type="button">Daily Challenge</button>
+      </div>
+
+      <div id="streakbox">
+        <p>Streak: <span id="streakcount" class="tnum" aria-live="polite">0</span></p>
+        <p id="streakwarn"></p>
+        <div id="calendar" role="img" aria-label="Days played calendar"></div>
+      </div>
+    </div>
+
+    <!-- ===== Game ===== -->
+    <div id="game">
+      <div class="status">
+        <span>Seconds left: <span id="timeleft" class="tnum">120</span></span>
+        <span id="pace" class="tnum" aria-live="polite" aria-label="pace indicator"></span>
+        <span>Score: <span id="score" class="tnum">0</span></span>
+      </div>
+      <div class="problem"><span id="question"></span></div>
+      <input id="answer" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer">
+    </div>
+
+    <!-- ===== Results + stats ===== -->
+    <div id="results">
+      <h1>Time's up!</h1>
+      <div class="score">Your score: <span id="finalscore" class="tnum">0</span></div>
+      <p id="resultmode"></p>
+
+      <div id="stats" class="tnum"></div>
+      <div id="trend" role="img" aria-label="score trend over time"></div>
+      <div id="weak_facts" class="tnum" aria-live="polite"></div>
+
+      <div id="xpbar">
+        <p>Level <span id="level" class="tnum">1</span></p>
+        <div class="xptrack"><div id="xpfill"></div></div>
+        <span id="xpremain" class="tnum"></span>
+        <p id="levelup" aria-live="polite"></p>
+      </div>
+
+      <div class="share-row">
+        <button class="btn" id="share" type="button" aria-label="Copy result card to clipboard">Share</button>
+        <span id="sharestatus" aria-live="polite"></span>
+        <textarea id="sharetext" readonly hidden></textarea>
+      </div>
+
+      <button class="btn" id="again" type="button">Play again</button>
+    </div>
+
+  </div>
+
+  <script src="game.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>

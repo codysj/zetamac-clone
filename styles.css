@@ -1,0 +1,654 @@
+/* ============================================================
+   Zetamac-clone "HEAT" — styles.css
+   All visual styling, design tokens, theme/font blocks, the heat
+   custom-property system, juice keyframes, layout, a11y.
+   Contract §5/§6. No JS, no hardcoded color that should be a token.
+   ============================================================ */
+
+/* ---------- tokens / default theme: heatwave (:root) ---------- */
+:root,
+[data-theme="heatwave"] {
+  --bg:          #0e1322;
+  --surface:     #161d31;
+  --fg:          #f2f5ff;
+  --muted:       #8a93ad;
+  --border:      #232c45;
+  --field-bg:    #0a0f1c;
+  --field-fg:    #f2f5ff;
+  --accent:      #ff2d75;
+  --accent-fg:   #0e1322;
+  --accent-hover:#ff5a92;
+  --accent-hot:  #ff8a1f;
+  --problem-fg:  #ffffff;
+  --focus-ring:  #57e0ff;
+  --shadow:      0 2px 24px rgba(255,45,117,.10);
+  --cal-0:#1a2236; --cal-1:#5a2b4e; --cal-2:#b03a5b; --cal-3:#ff2d75;
+  --ink:var(--fg); --grid:#232c45; --ahead:#43e08a; --behind:#ff5a3c;
+  --warm-mix: #2a0f1a; /* color body warms toward at full heat */
+
+  /* type roles */
+  --font-display: "Arial Narrow", "Helvetica Neue Condensed", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+  --display-weight: 800;
+
+  /* heat scalar coupling (§5). --heat written by ui.js per frame. */
+  --heat: 0;
+  --heat-ease-time: 120ms;
+  --pop-scale: 1.35;
+  /* plain --accent stays the cold fallback when color-mix is unsupported */
+  --accent-live: color-mix(in oklch, var(--accent), var(--accent-hot) calc(var(--heat)*100%));
+  --glow: calc(var(--heat) * 24px);
+  --bg-warm: color-mix(in oklch, var(--bg), var(--warm-mix) calc(var(--heat)*60%));
+}
+
+/* ponytail: color-mix fallback is the cold accent, acceptable for a toy. */
+@supports not (color: color-mix(in oklch, red, blue)) {
+  :root { --accent-live: var(--accent); --bg-warm: var(--bg); }
+}
+
+/* ======================= OTHER THEMES ======================= */
+[data-theme="dark"] {
+  --bg:#0a0a0b; --surface:#161618; --fg:#ededf0; --muted:#8b8b93;
+  --border:#26262b; --field-bg:#000000; --field-fg:#ededf0;
+  --accent:#7c5cff; --accent-fg:#ffffff; --accent-hover:#9a80ff; --accent-hot:#37d0ff;
+  --problem-fg:#ffffff; --focus-ring:#37d0ff;
+  --shadow:0 2px 24px rgba(124,92,255,.12);
+  --cal-0:#1c1c20; --cal-1:#3a3168; --cal-2:#5a4ca8; --cal-3:#7c5cff;
+  --grid:#26262b; --warm-mix:#1a1230;
+}
+[data-theme="paper"] {
+  --bg:#f5f1e8; --surface:#fbf8f1; --fg:#2b2722; --muted:#7a7268;
+  --border:#e0d8c8; --field-bg:#ffffff; --field-fg:#2b2722;
+  --accent:#c0392b; --accent-fg:#ffffff; --accent-hover:#a93226; --accent-hot:#e67e22;
+  --problem-fg:#1f1b16; --focus-ring:#2266cc;
+  --shadow:0 2px 18px rgba(0,0,0,.08);
+  --cal-0:#e7e0d2; --cal-1:#e8b9a8; --cal-2:#d97a5f; --cal-3:#c0392b;
+  --grid:#e0d8c8; --ink:#2b2722; --ahead:#1f9d55; --behind:#c0392b; --warm-mix:#f0d8b0;
+}
+[data-theme="contrast"] {
+  --bg:#000000; --surface:#0a0a0a; --fg:#ffffff; --muted:#c8c8c8;
+  --border:#ffffff; --field-bg:#000000; --field-fg:#ffffff;
+  --accent:#ffff00; --accent-fg:#000000; --accent-hover:#ffe000; --accent-hot:#00ffff;
+  --problem-fg:#ffffff; --focus-ring:#00ffff;
+  --shadow:none;
+  --cal-0:#1a1a1a; --cal-1:#666600; --cal-2:#b3b300; --cal-3:#ffff00;
+  --grid:#ffffff; --ahead:#00ff00; --behind:#ff4040; --warm-mix:#222200;
+}
+[data-theme="solarized"] {
+  --bg:#002b36; --surface:#073642; --fg:#eee8d5; --muted:#93a1a1;
+  --border:#0a4250; --field-bg:#001f27; --field-fg:#eee8d5;
+  --accent:#268bd2; --accent-fg:#002b36; --accent-hover:#3a9bdc; --accent-hot:#cb4b16;
+  --problem-fg:#fdf6e3; --focus-ring:#2aa198;
+  --shadow:0 2px 24px rgba(38,139,210,.14);
+  --cal-0:#073642; --cal-1:#1a5f6b; --cal-2:#268bd2; --cal-3:#2aa198;
+  --grid:#0a4250; --ahead:#859900; --behind:#dc322f; --warm-mix:#0a3a2e;
+}
+[data-theme="crt"] {
+  --bg:#031007; --surface:#06200f; --fg:#9dffb0; --muted:#4fae64;
+  --border:#0d3a1c; --field-bg:#020a05; --field-fg:#bfffce;
+  --accent:#39ff14; --accent-fg:#031007; --accent-hover:#6bff52; --accent-hot:#aaff00;
+  --problem-fg:#d0ffd8; --focus-ring:#39ff14;
+  --shadow:0 0 24px rgba(57,255,20,.18);
+  --cal-0:#0a2614; --cal-1:#176b2c; --cal-2:#28b347; --cal-3:#39ff14;
+  --grid:#0d3a1c; --ahead:#39ff14; --behind:#ff5a3c; --warm-mix:#0a3010;
+}
+[data-theme="seasonal"] {
+  --bg:#0f1a17; --surface:#142420; --fg:#eafff5; --muted:#7fb3a3;
+  --border:#1d352e; --field-bg:#0a1411; --field-fg:#eafff5;
+  --accent:#2ecf8f; --accent-fg:#0f1a17; --accent-hover:#46e0a3; --accent-hot:#ffcf3f;
+  --problem-fg:#ffffff; --focus-ring:#ffcf3f;
+  --shadow:0 2px 24px rgba(46,207,143,.14);
+  --cal-0:#16302a; --cal-1:#1f6b52; --cal-2:#27a878; --cal-3:#2ecf8f;
+  --grid:#1d352e; --ahead:#2ecf8f; --behind:#ff7a59; --warm-mix:#13332a;
+}
+
+/* ========================= FONTS ========================= */
+/* speed = default heatwave display+mono pairing. body uses body stack,
+   .problem/#score/#finalscore pull --font-display. */
+[data-font="speed"]   { --font-stack: var(--font-body); }
+[data-font="system"]  { --font-stack: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+                        --font-display: var(--font-stack); --display-weight:700; }
+[data-font="serif"]   { --font-stack: Georgia, "Times New Roman", "Iowan Old Style", serif;
+                        --font-display: var(--font-stack); --display-weight:700; }
+[data-font="mono"]    { --font-stack: ui-monospace, "SF Mono", Consolas, monospace;
+                        --font-display: var(--font-stack); --display-weight:700; }
+[data-font="rounded"] { --font-stack: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN",
+                        "Quicksand", system-ui, sans-serif;
+                        --font-display: var(--font-stack); --display-weight:700; }
+[data-font="dyslexic"]{ --font-stack: "Comic Sans MS", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+                        --font-display: var(--font-stack); --display-weight:700; }
+
+/* ========================= BASE ========================= */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-stack, var(--font-body));
+  font-size: 16px;
+  color: var(--fg);
+  background: var(--bg-warm);
+  transition: background var(--heat-ease-time) linear, color .2s;
+  -webkit-font-smoothing: antialiased;
+  /* digits never reflow regardless of theme/font (§5 global) */
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.tnum { font-variant-numeric: tabular-nums lining-nums; }
+
+a { color: var(--accent-live); text-decoration: none; }
+a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+h1 { font-weight: 600; font-size: 31px; margin: 0 0 10px; letter-spacing: -.01em; }
+p { line-height: 1.5; }
+.muted { color: var(--muted); font-size: 14px; }
+
+.container { width: 760px; max-width: 92%; margin: 0 auto; }
+
+/* ---------- focus-visible ring everywhere ---------- */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* mouse focus stays quiet */
+:focus:not(:focus-visible) { outline: none; }
+
+/* ========================= HEADER ========================= */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  margin-bottom: 30px;
+  background: var(--surface);
+  position: relative;
+  /* thin neon grid motif */
+  background-image:
+    linear-gradient(transparent 95%, color-mix(in oklch, var(--accent) 18%, transparent) 100%),
+    linear-gradient(90deg, transparent 96%, color-mix(in oklch, var(--accent) 14%, transparent) 100%);
+  background-size: 100% 14px, 26px 100%;
+}
+@supports not (color: color-mix(in oklch, red, blue)) {
+  .header { background-image: none; }
+}
+.header .container { display: flex; align-items: center; gap: 12px; font-size: 20px; }
+#home {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+#home:hover { color: var(--accent-live); text-decoration: none; }
+
+/* mute button, right-aligned in header */
+#mute {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#mute:hover { border-color: var(--accent-live); }
+#mute[aria-pressed="true"] { opacity: .6; }
+
+/* ========================= BUTTONS ========================= */
+.btn {
+  display: inline-block;
+  background: var(--accent-live);
+  color: var(--accent-fg);
+  border: 2px solid var(--accent-live);
+  padding: 10px 24px;
+  font-size: 17px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: filter .12s, transform .06s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.4); }
+
+/* secondary / ghost button variant (daily, share) reuse .btn but allow override */
+.btn.ghost {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border);
+}
+.btn.ghost:hover { border-color: var(--accent-live); }
+
+/* ========================= FORM CONTROLS ========================= */
+label { cursor: pointer; }
+
+input[type=text], input[type=url] {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--field-fg);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+input[type=text] { width: 52px; text-align: center; }
+input[type=url] { width: 100%; max-width: 280px; }
+
+select {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--field-fg);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+
+input[type=checkbox] {
+  width: 16px; height: 16px;
+  accent-color: var(--accent-live);
+  vertical-align: -2px;
+  cursor: pointer;
+}
+input[type=file] { font-size: 13px; color: var(--muted); max-width: 280px; }
+
+/* ========================= SCREENS ========================= */
+#settings, #game, #results { /* visibility toggled by ui.js via inline display */ }
+
+/* ---------- settings screen ---------- */
+.lead { color: var(--muted); font-size: 16px; margin-bottom: 28px; line-height: 1.5; }
+
+table.settings { border-collapse: collapse; margin-bottom: 24px; width: 100%; }
+table.settings td { padding: 7px 6px; vertical-align: middle; font-size: 16px; }
+table.settings td.op { width: 150px; }
+
+.duration-row { margin-bottom: 22px; font-size: 16px; }
+
+/* drill-weak toggle row */
+.drill-row { margin: 0 0 22px; font-size: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#drill_hint { font-style: italic; }
+
+/* appearance row: two selects */
+.appearance-row {
+  display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.appearance-row label { font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+#theme-hint { font-size: 13px; }
+
+/* ---------- streak box ---------- */
+#streakbox {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+#streakbox h2 { font-size: 16px; margin: 0 0 8px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+#streakcount {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: 46px;
+  line-height: 1;
+  color: var(--accent-live);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+#streakcount::after { content: " 🔥"; font-size: 25px; }
+#streakwarn { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
+
+/* streak calendar grid (inline SVG host) */
+#calendar { margin-top: 14px; overflow-x: auto; }
+#calendar svg { display: block; max-width: 100%; height: auto; }
+#calendar text { fill: var(--muted); font-size: 9px; font-family: var(--font-body); }
+#calendar rect { rx: 2; }
+
+/* ---------- brainrot controls block ---------- */
+.brainrot-controls {
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+}
+.brainrot-controls h2 { font-size: 14px; margin: 0 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.brainrot-controls .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 14px; }
+.brainrot-controls label { font-size: 14px; }
+
+/* ========================= GAME SCREEN ========================= */
+#game { text-align: center; padding: 20px 0 60px; }
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  max-width: 420px;
+  margin: 0 auto 12px;
+  font-size: 18px;
+  color: var(--muted);
+}
+#timeleft, #score {
+  font-family: var(--font-mono);
+  font-size: 25px;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+#score {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  display: inline-block;
+}
+
+#pace {
+  display: block;
+  max-width: 420px;
+  margin: 0 auto 48px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.problem {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: clamp(40px, 9vw, 64px);
+  margin-bottom: 24px;
+  color: var(--problem-fg);
+  text-shadow: 0 0 var(--glow) var(--accent-live);
+  letter-spacing: .01em;
+  line-height: 1.1;
+}
+
+#answer {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: clamp(34px, 7vw, 48px);
+  width: min(220px, 70vw);
+  text-align: center;
+  color: var(--field-fg);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent-live);
+  box-shadow: 0 var(--glow) calc(var(--glow)) calc(var(--glow) / -2) var(--accent-live);
+  outline: none;
+  padding: 4px 0;
+  border-radius: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+  transition: box-shadow var(--heat-ease-time) linear, border-color var(--heat-ease-time) linear;
+}
+#answer:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+/* ========================= RESULTS SCREEN ========================= */
+#results { text-align: center; padding: 20px 0 60px; }
+#results h1 { margin-bottom: 6px; }
+
+#finalscore {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--accent-live);
+  display: inline-block;
+  margin: 8px 0;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+#resultmode { color: var(--muted); font-size: 16px; margin: 0 0 20px; }
+
+/* stats / weak facts */
+#stats, #weak_facts {
+  font-size: 16px;
+  color: var(--fg);
+  margin: 14px auto;
+  max-width: 480px;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+#weak_facts { color: var(--muted); }
+
+/* trend svg */
+#trend { margin: 20px auto; max-width: 480px; }
+#trend svg { display: block; width: 100%; height: auto; }
+#trend polyline { fill: none; stroke: var(--accent-live); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+#trend circle { fill: var(--accent-hot); }
+#trend line { stroke: var(--ahead); stroke-dasharray: 4 3; stroke-width: 1.5; }
+#trend text { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+#trend .axis { stroke: var(--grid); stroke-width: 1; }
+
+/* ---------- xp panel ---------- */
+#xpbar {
+  margin: 24px auto;
+  max-width: 480px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: left;
+}
+.xp-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
+#level {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: 25px;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.xp-track {
+  height: 12px;
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+#xpfill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hot));
+  border-radius: 6px 0 0 6px;
+  transition: width .5s ease;
+}
+#xpremain { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums lining-nums; }
+#levelup {
+  margin: 10px 0 0;
+  font-weight: 600;
+  color: var(--accent-hot);
+  min-height: 1.2em;
+}
+#levelup:empty { margin: 0; min-height: 0; }
+
+/* share */
+#share { margin-top: 8px; }
+#sharestatus { display: inline-block; margin-left: 10px; font-size: 14px; color: var(--ahead); }
+#sharetext[hidden] { display: none; }
+
+/* ============================================================
+   JUICE — flash / particles / pop / thump  (§5/§6)
+   ============================================================ */
+
+/* full-viewport overlays, never steal clicks (§8f) */
+#flash, #fx, #bgVideo, #bgFallback, #brainrotPanel, #brainrotVideo {
+  position: fixed;
+  pointer-events: none;
+}
+
+/* heat/juice flash overlay */
+#flash {
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  background: radial-gradient(120% 120% at 50% 50%,
+    color-mix(in oklch, var(--accent-live) 30%, transparent),
+    transparent 60%);
+}
+@supports not (color: color-mix(in oklch, red, blue)) {
+  #flash { background: var(--accent); }
+}
+#flash.flash-on { animation: flashpulse 220ms ease-out; }
+@keyframes flashpulse {
+  0%   { opacity: .55; }
+  100% { opacity: 0; }
+}
+
+/* particle container */
+#fx { inset: 0; z-index: 41; overflow: hidden; }
+/* individual particles created by ui.js; class .particle */
+.particle {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: var(--accent-live);
+  will-change: transform, opacity;
+}
+
+/* score pop */
+#score.pop { animation: scorepop var(--heat-ease-time) ease-out; }
+@keyframes scorepop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(var(--pop-scale)); }
+  100% { transform: scale(1); }
+}
+
+/* game-screen thump */
+#game.thump { animation: thump 140ms ease-out; }
+@keyframes thump {
+  0%   { transform: translateY(0) scale(1); }
+  40%  { transform: translateY(-4px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ============================================================
+   BRAINROT — ambient bg + side panel  (§3, §8f/j/k)
+   ============================================================ */
+
+/* ambient blurred bg video — behind everything */
+#bgVideo {
+  inset: 0;
+  z-index: -2;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: blur(28px) brightness(.5) saturate(1.2);
+  opacity: 0;
+  transition: opacity .4s;
+}
+#bgVideo.on { opacity: .55; }
+
+/* animated CSS-gradient fallback bg (zero assets) */
+#bgFallback {
+  inset: 0;
+  z-index: -3;
+  opacity: 0;
+  transition: opacity .4s;
+  background: linear-gradient(120deg,
+    var(--bg), var(--accent) 35%, var(--accent-hot) 55%, var(--accent) 70%, var(--bg));
+  background-size: 400% 400%;
+  filter: blur(40px) brightness(.45) saturate(1.3);
+}
+#bgFallback.on { opacity: .5; animation: brainrotGradient 18s linear infinite; }
+@keyframes brainrotGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* split-screen brainrot panel, right side */
+#brainrotPanel {
+  top: 0; right: 0; bottom: 0;
+  width: 30vw; max-width: 360px;
+  z-index: 30;
+  background: #000;
+  border-left: 1px solid var(--border);
+  display: none;
+}
+#brainrotPanel.on { display: block; }
+#brainrotVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+/* when panel is on, give content room so it never sits under the panel */
+body.split-on .container { margin-right: max(0px, calc((100vw - 760px) / 2)); }
+
+/* panel must never cover #answer on small screens (§8f) */
+@media (max-width: 900px) {
+  #brainrotPanel, #brainrotPanel.on { display: none; }
+  body.split-on .container { margin-right: auto; }
+}
+
+/* ============================================================
+   CRT theme extras — scanlines (motion-gated)  (§5)
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme="crt"] .problem,
+  [data-theme="crt"] #finalscore,
+  [data-theme="crt"] #score {
+    text-shadow: 0 0 var(--glow, 6px) var(--accent-live),
+                 0 0 2px var(--accent-live);
+  }
+  [data-theme="crt"] #game::after,
+  [data-theme="crt"] #results::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,.22) 0px,
+      rgba(0,0,0,.22) 1px,
+      transparent 2px,
+      transparent 3px);
+    animation: crtRoll 8s linear infinite;
+  }
+  @keyframes crtRoll {
+    from { background-position-y: 0; }
+    to   { background-position-y: 6px; }
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 600px) {
+  .header { margin-bottom: 20px; }
+  .container { max-width: 94%; }
+  table.settings td.op { width: auto; }
+  table.settings, table.settings tbody, table.settings tr, table.settings td { display: block; width: 100%; }
+  table.settings td { padding: 4px 0; }
+  table.settings td.op { padding-top: 12px; }
+  .status { max-width: 100%; }
+  input[type=text] { width: 46px; }
+  .appearance-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* ============================================================
+   REDUCED MOTION — kill heat-ease + all keyframes, keep palettes (§5/§8i)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  :root { --heat-ease-time: 0ms; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* explicitly null the named juice/CRT/brainrot keyframes */
+  #flash.flash-on,
+  #score.pop,
+  #game.thump,
+  #bgFallback.on,
+  [data-theme="crt"] #game::after,
+  [data-theme="crt"] #results::after { animation: none !important; }
+  .particle { display: none; }
+}
