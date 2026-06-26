@@ -150,13 +150,13 @@ document.documentElement.setAttribute('data-font','speed');}</script>
         <p id="levelup" aria-live="polite"></p>
       </div>
 
-      <div class="share-row">
-        <button class="btn" id="share" type="button" aria-label="Copy result card to clipboard">Share</button>
-        <span id="sharestatus" aria-live="polite"></span>
-        <textarea id="sharetext" readonly hidden></textarea>
+      <div class="result-actions">
+        <button class="btn icon-btn" id="restart" type="button" aria-label="Play again" title="Play again">🔄</button>
+        <button class="btn icon-btn" id="again" type="button" aria-label="Home" title="Home">🏠</button>
+        <button class="btn icon-btn" id="share" type="button" aria-label="Copy result card to clipboard" title="Share">📤</button>
       </div>
-
-      <button class="btn" id="again" type="button">Play again</button>
+      <span id="sharestatus" aria-live="polite"></span>
+      <textarea id="sharetext" readonly hidden></textarea>
     </div>
 
   </div>

@@ -48,7 +48,8 @@
     trend: $('trend'), weak_facts: $('weak_facts'),
     xpbar: $('xpbar'), level: $('level'), xpfill: $('xpfill'), xpremain: $('xpremain'),
     levelup: $('levelup'),
-    share: $('share'), sharestatus: $('sharestatus'), sharetext: $('sharetext'), again: $('again')
+    share: $('share'), sharestatus: $('sharestatus'), sharetext: $('sharetext'),
+    restart: $('restart'), again: $('again')
   };
 
   // ====================================================================
@@ -494,8 +495,9 @@
     var ops = enabledOps(cfg);
     if (ops.length === 0) { alert('Select at least one operation.'); return; }
 
-    // persist last-used settings
+    // persist last-used settings + mark a run active (so a mid-game refresh respawns it)
     state.settings = cfg;
+    state.activeRun = { daily: !!daily };
     Game.Store.save(state);
 
     getCtx(); // unlock audio on this gesture
@@ -624,6 +626,7 @@
     };
     var res = Game.finalizeRun(state, run.runStats, meta);
     state = res.state;
+    state.activeRun = null; // run finished — don't respawn on next load
     Game.Store.save(state);
 
     var record = res.record;
@@ -741,7 +744,9 @@
     if (run && run.timer) clearInterval(run.timer);
     stopHeat();
     stopBrainrotMusic();
-    if (run) { Game.Store.save(state); run = null; } // flush accumulated weakness (§c)
+    state.activeRun = null;        // leaving the run — don't respawn on next load
+    if (run) { run = null; }        // flush accumulated weakness (§c)
+    Game.Store.save(state);
   }
 
   // ====================================================================
@@ -754,6 +759,10 @@
     wireBrainrot();
     renderStreakUI();
     show('settings');
+
+    // Mid-game refresh: respawn a fresh run with the same config instead of the menu.
+    // Wired below init body so handlers exist; start() reads the just-restored form.
+    var resume = state.activeRun;
 
     // mute button
     if (el.mute) {
@@ -781,6 +790,11 @@
       state.prefs.drillWeak = el.drill_weak.checked; Game.Store.save(state);
     });
 
+    // restart: jump straight into a fresh run with the same config (tab+enter friendly)
+    if (el.restart) el.restart.addEventListener('click', function () {
+      abandon();
+      start(false);
+    });
     el.again.addEventListener('click', function () {
       abandon();
       writeSettingsForm(state.settings);
@@ -802,6 +816,13 @@
       reducedMotion.addEventListener('change', function () {
         if (reducedMotion.matches) { heatValue = heatTarget; }
       });
+    }
+
+    // respawn a run if the page was refreshed mid-game (see `resume` above).
+    // ponytail: a daily can't restart if already completed today — fall back to free play.
+    if (resume) {
+      var dailyDone = resume.daily && !!state.daily[Game.localDateStr(Date.now())];
+      start(resume.daily && !dailyDone);
     }
   }
 

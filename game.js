@@ -56,7 +56,8 @@ Game.DEFAULTS = Object.freeze({
   history: [],
   daily: {},
   weakness: {},
-  streak: { current: 0, best: 0, lastPlayedDate: null, playedDates: [] }
+  streak: { current: 0, best: 0, lastPlayedDate: null, playedDates: [] },
+  activeRun: null // {daily} while a run is in progress; refresh respawns it. Cleared on finish/home.
 });
 
 // ===================================================================
